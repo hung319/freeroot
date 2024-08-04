@@ -28,6 +28,8 @@ This shell script is designed to automate the installation of Foxytoux, a lightw
     or
     ```sh
     bash root-wget.sh
+    ```
+    ```sh
     bash root-curl.sh
     ```
 
