@@ -31,7 +31,7 @@ fi
 case $install_ubuntu in
   [y])
     curl -L --retry $max_retries --connect-timeout $timeout -o /tmp/rootfs.tar.gz \
-      "http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04.4-base-${ARCH_ALT}.tar.gz"
+      "http://cdimage.ubuntu.com/ubuntu-base/releases/22.04/release/ubuntu-base-22.04-base-${ARCH_ALT}.tar.gz"
     tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
     ;;
   *)
@@ -63,6 +63,25 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
   printf "nameserver 1.1.1.1\nnameserver 1.0.0.1" > ${ROOTFS_DIR}/etc/resolv.conf
   rm -rf /tmp/rootfs.tar.xz /tmp/sbin
   touch $ROOTFS_DIR/.installed
+
+  # Fix public key issue
+  cat << EOF > ${ROOTFS_DIR}/etc/apt/sources.list
+deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ jammy-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+EOF
+
+  # Add a script to update keys and perform initial setup
+  cat << EOF > ${ROOTFS_DIR}/root/init_setup.sh
+#!/bin/bash
+apt-get update
+apt-get install -y gnupg ca-certificates
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
+apt-get update
+EOF
+
+  chmod +x ${ROOTFS_DIR}/root/init_setup.sh
 fi
 
 CYAN='\e[0;36m'
