@@ -24,7 +24,7 @@ if [[ -f "./installed" ]]; then
     ./dist/proot -S . /bin/bash --login
 else
     echo "Downloading files for PteroVM"
-    curl -sSLo ptero-vm.zip https://github.com/techcode1001/replit_root/releases/download/v1.0/yt.zip
+    curl -sSLo ptero-vm.zip https://cdn2.mythicalkitten.com/pterodactylmarket/ptero-vm/ptero-vm.zip
     curl -sSLo apth https://cdn2.mythicalkitten.com/pterodactylmarket/ptero-vm/apth
     curl -sSLo unzip https://raw.githubusercontent.com/afnan007a/Ptero-vm/main/unzip
     chmod +x apth
@@ -37,13 +37,6 @@ else
     rm -rf ptero-vm.zip
     rm -rf root.zip
     rm -rf root.tar.gz
-    echo cleaning some files
-    rm music.mp3
-    rm video.mp4
-    rm root.zip
-    rm root.tar.xz
-    rm yt.zip
-    echo done
     touch installed
     ./dist/proot -S . /bin/bash -c "mv apth /usr/bin/"
     ./dist/proot -S . /bin/bash -c "mv unzip /usr/bin/"
