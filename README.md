@@ -30,7 +30,10 @@ This shell script is designed to automate the installation of Foxytoux, a lightw
     bash root-wget.sh
     ```
     ```sh
-    bash root-curl.sh
+    bash ubuntu22.sh
+    ```
+    ```sh
+    bash ubuntu20.sh
     ```
 
 ## Supported Architectures
