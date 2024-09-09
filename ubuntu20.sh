@@ -3,7 +3,7 @@
 ROOTFS_DIR=$(pwd)
 export PATH=$PATH:~/.local/usr/bin
 max_retries=50
-timeout=1
+timeout=10
 ARCH=$(uname -m)
 PROOT_VERSION="5.3.0"
 
