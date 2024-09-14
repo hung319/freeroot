@@ -67,7 +67,6 @@ display_gg() {
   echo -e "           ${CYAN}-----> Mission Completed ! <----${RESET_COLOR}"
 }
 
-clear
 display_gg
 
 $ROOTFS_DIR/usr/local/bin/proot \
