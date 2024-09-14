@@ -26,12 +26,11 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
   echo "#"
   echo "#######################################################################################"
 
-  echo "Installing Ubuntu 22.04..."
+  echo "Installing Ubuntu 24.04..."
 
-  url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/noble/${ARCH_ALT}/default/"
-  LATEST_VERSION=$(curl -s $url | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
-  curl -Ls "${url}${LATEST_VERSION}/rootfs.tar.xz" -o /tmp/rootfs.tar.gz
-  tar -xzvf /tmp/rootfs.tar.gz -C "$ROOTFS_DIR"
+  curl -L --retry $max_retries --connect-timeout $timeout -o /tmp/rootfs.tar.gz \
+    "http://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.1-base-${ARCH_ALT}.tar.gz"
+  tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
 
   mkdir $ROOTFS_DIR/usr/local/bin -p
   curl -L --retry $max_retries --connect-timeout $timeout -o $ROOTFS_DIR/usr/local/bin/proot "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
