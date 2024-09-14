@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ROOTFS_DIR=$(pwd)
 export PATH=$PATH:~/.local/usr/bin
