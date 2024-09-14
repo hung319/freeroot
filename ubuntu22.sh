@@ -28,7 +28,7 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
 
   echo "Installing Ubuntu 22.04..."
 
-  url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/noble/${ARCH_ALT}/default/"
+  url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/jammy/${ARCH_ALT}/default/"
   LATEST_VERSION=$(curl -s $url | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
   curl -Ls "${url}${LATEST_VERSION}/rootfs.tar.xz" -o $ROOTFS_DIR/rootfs.tar.xz
   tar -xf $ROOTFS_DIR/rootfs.tar.xz -C "$ROOTFS_DIR"
