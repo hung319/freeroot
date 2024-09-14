@@ -26,7 +26,7 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
   echo "#"
   echo "#######################################################################################"
 
-  echo "Installing Ubuntu 22.04..."
+  echo "Installing Ubuntu 24.04..."
 
   url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/noble/${ARCH_ALT}/default/"
   LATEST_VERSION=$(curl -s $url | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
