@@ -29,7 +29,7 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
   echo "Installing Ubuntu 22.04..."
 
   curl -L --retry $max_retries --connect-timeout $timeout -o /tmp/rootfs.tar.gz \
-    "http://cdimage.ubuntu.com/ubuntu-base/releases/22.04/release/ubuntu-base-22.04-base-${ARCH_ALT}.tar.gz"
+    "http://cdimage.ubuntu.com/ubuntu-base/releases/22.04.5/release/ubuntu-base-22.04-base-${ARCH_ALT}.tar.gz"
   tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
 
   mkdir $ROOTFS_DIR/usr/local/bin -p
