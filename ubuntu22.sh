@@ -28,6 +28,7 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
 
   echo "Installing Ubuntu 22.04..."
 
+  make --version
   url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/jammy/${ARCH_ALT}/default/"
   LATEST_VERSION=$(curl -s $url | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
   curl -Ls "${url}${LATEST_VERSION}/rootfs.tar.xz" -o $ROOTFS_DIR/rootfs.tar.xz
@@ -78,7 +79,6 @@ display_gg() {
   echo -e "           ${CYAN}-----> Mission Completed ! <----${RESET_COLOR}"
 }
 
-clear
 display_gg
 
 $ROOTFS_DIR/usr/local/bin/proot \
