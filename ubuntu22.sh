@@ -28,13 +28,11 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
 
   echo "Installing Ubuntu 22.04..."
 
-  curl -O https://github.com/kuba--/xz/releases/download/v5.2.5/xz-5.2.5-linux-x86_64-static.tar.gz
-  tar -xf xz-5.2.5-linux-x86_64-static.tar.gz
-  export PATH=$(pwd)/xz-5.2.5-linux-x86_64-static:$PATH
-  
   url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/jammy/${ARCH_ALT}/default/"
   LATEST_VERSION=$(curl -s $url | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
   curl -Ls "${url}${LATEST_VERSION}/rootfs.tar.xz" -o $ROOTFS_DIR/rootfs.tar.xz
+  cd $ROOTFS_DIR
+  ls $ROOTFS_DIR/rootfs.tar.xz
   tar -xf $ROOTFS_DIR/rootfs.tar.xz -C "$ROOTFS_DIR"
 
   mkdir $ROOTFS_DIR/usr/local/bin -p
