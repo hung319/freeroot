@@ -31,7 +31,18 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
   url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/jammy/${ARCH_ALT}/default/"
   LATEST_VERSION=$(curl -s $url | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
   curl -Ls "${url}${LATEST_VERSION}/rootfs.tar.xz" -o $ROOTFS_DIR/rootfs.tar.xz
-  tar -f $ROOTFS_DIR/rootfs.tar.xz -C "$ROOTFS_DIR"
+
+  echo "Extracting rootfs..."
+  # Manually decompress .xz file
+  ( \
+    dd if=$ROOTFS_DIR/rootfs.tar.xz bs=1 count=6 2>/dev/null | od -An -tx1 | tr -d ' \n' | grep -q 'fd377a585a00' && \
+    dd if=$ROOTFS_DIR/rootfs.tar.xz bs=1 skip=12 2>/dev/null | xz -dc > $ROOTFS_DIR/rootfs.tar \
+  ) || ( \
+    dd if=$ROOTFS_DIR/rootfs.tar.xz bs=1 count=2 2>/dev/null | od -An -tx1 | tr -d ' \n' | grep -q '1f8b' && \
+    dd if=$ROOTFS_DIR/rootfs.tar.xz bs=1 skip=10 2>/dev/null | gzip -dc > $ROOTFS_DIR/rootfs.tar \
+  )
+
+  tar -xf $ROOTFS_DIR/rootfs.tar -C "$ROOTFS_DIR"
 
   mkdir $ROOTFS_DIR/usr/local/bin -p
   curl -L --retry $max_retries --connect-timeout $timeout -o $ROOTFS_DIR/usr/local/bin/proot "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
@@ -52,7 +63,7 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
   chmod 755 $ROOTFS_DIR/usr/local/bin/proot
 
   printf "nameserver 1.1.1.1\nnameserver 1.0.0.1" > ${ROOTFS_DIR}/etc/resolv.conf
-  rm -rf /tmp/rootfs.tar.xz /tmp/sbin
+  rm -rf $ROOTFS_DIR/rootfs.tar $ROOTFS_DIR/rootfs.tar.xz $ROOTFS_DIR/sbin
   touch $ROOTFS_DIR/.installed
 fi
 
