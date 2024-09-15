@@ -41,7 +41,7 @@ else
 fi
 
 # Check for required commands
-for cmd in curl tar xz; do
+for cmd in curl tar; do
     if ! command_exists $cmd; then
         print_message "$RED" "Error: $cmd is not installed. Please install it and try again."
         exit 1
