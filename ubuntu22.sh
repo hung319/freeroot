@@ -28,10 +28,9 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
 
   echo "Installing Ubuntu 22.04..."
 
-  url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/jammy/${ARCH_ALT}/default/"
-  LATEST_VERSION=$(curl -s $url | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
-  curl -Ls "https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/jammy/arm64/default/20240914_07%3A42/rootfs.tar.xz" -o $ROOTFS_DIR/rootfs.tar.xz
-  tar -xf $ROOTFS_DIR/rootfs.tar.xz -C "$ROOTFS_DIR"
+  curl -L --retry $max_retries --connect-timeout $timeout -o /tmp/rootfs.tar.gz \
+    "http://cdimage.ubuntu.com/ubuntu-base/releases/22.04/release/ubuntu-base-22.04-base-${ARCH_ALT}.tar.gz"
+  tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
 
   mkdir $ROOTFS_DIR/usr/local/bin -p
   curl -L --retry $max_retries --connect-timeout $timeout -o $ROOTFS_DIR/usr/local/bin/proot "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
