@@ -31,9 +31,7 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
   url="https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/jammy/${ARCH_ALT}/default/"
   LATEST_VERSION=$(curl -s $url | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
   curl -Ls "${url}${LATEST_VERSION}/rootfs.tar.xz" -o $ROOTFS_DIR/rootfs.tar.xz
-  cd $ROOTFS_DIR
-  ls $ROOTFS_DIR/rootfs.tar.xz
-  tar -xf $ROOTFS_DIR/rootfs.tar.xz -C "$ROOTFS_DIR"
+  tar -f $ROOTFS_DIR/rootfs.tar.xz -C "$ROOTFS_DIR"
 
   mkdir $ROOTFS_DIR/usr/local/bin -p
   curl -L --retry $max_retries --connect-timeout $timeout -o $ROOTFS_DIR/usr/local/bin/proot "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
@@ -69,6 +67,7 @@ display_gg() {
   echo -e "           ${CYAN}-----> Mission Completed ! <----${RESET_COLOR}"
 }
 
+clear
 display_gg
 
 $ROOTFS_DIR/usr/local/bin/proot \
