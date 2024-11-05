@@ -47,7 +47,7 @@ read -p "Enter OS (0-3): " input
 case $input in
     0)
     curl -L --retry $max_retries --max-time $timeout -o /tmp/rootfs.tar.xz \
-    "https://github.com/termux/proot-distro/releases/download/v4.7.0/debian-bullseye-${ARCH}-pd-v4.7.0.tar.xz"
+    "https://github.com/termux/proot-distro/releases/download/v4.7.0/debian-bookworm-${ARCH}-pd-v4.7.0.tar.xz"
     apt download xz-utils
     deb_file=$(find $ROOTFS_DIR -name "*.deb" -type f)
     dpkg -x $deb_file ~/.local/
@@ -57,7 +57,7 @@ case $input in
 
     1)
     curl -L --retry $max_retries --max-time $timeout -o /tmp/rootfs.tar.gz \
-    "https://github.com/termux/proot-distro/releases/download/v4.11.0/ubuntu-jammy-${ARCH}-pd-v4.11.0.tar.xz"
+    "https://github.com/termux/proot-distro/releases/download/v4.11.0/ubuntu-noble-${ARCH}-pd-v4.11.0.tar.xz"
 
     tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR --strip-components=1;;
 
