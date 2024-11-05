@@ -10,10 +10,8 @@ ROOTFS_DIR=/home/container
 
 export PATH=$PATH:~/.local/usr/bin
 
-
 max_retries=50
 timeout=3
-
 
 # Detect the machine architecture.
 ARCH=$(uname -m)
@@ -30,7 +28,6 @@ else
 fi
 
 # Download & decompress the Linux root file system if not already installed.
-
 if [ ! -e $ROOTFS_DIR/.installed ]; then
 echo "#######################################################################################"
 echo "#"
@@ -48,9 +45,8 @@ echo "* [2] Alpine"
 read -p "Enter OS (0-3): " input
 
 case $input in
-
     0)
-    wget --tries=$max_retries --timeout=$timeout -O /tmp/rootfs.tar.xz \
+    curl -L --retry $max_retries --max-time $timeout -o /tmp/rootfs.tar.xz \
     "https://github.com/termux/proot-distro/releases/download/v4.7.0/debian-bullseye-${ARCH}-pd-v4.7.0.tar.xz"
     apt download xz-utils
     deb_file=$(find $ROOTFS_DIR -name "*.deb" -type f)
@@ -60,18 +56,16 @@ case $input in
     tar -xJf /tmp/rootfs.tar.xz -C $ROOTFS_DIR --strip-components=1;;
 
     1)
-    wget --tries=$max_retries --timeout=$timeout -O /tmp/rootfs.tar.gz \
+    curl -L --retry $max_retries --max-time $timeout -o /tmp/rootfs.tar.gz \
     "https://github.com/termux/proot-distro/releases/download/v4.11.0/ubuntu-jammy-${ARCH}-pd-v4.11.0.tar.xz"
 
     tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR --strip-components=1;;
 
     2)
-    wget --tries=$max_retries --timeout=$timeout -O /tmp/rootfs.tar.gz \
+    curl -L --retry $max_retries --max-time $timeout -o /tmp/rootfs.tar.gz \
     "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-minirootfs-3.19.1-${ARCH}.tar.gz"
 
     tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR;;
-
-
 esac
 
 fi
@@ -85,24 +79,25 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
     # Download the packages from their sources
     mkdir $ROOTFS_DIR/usr/local/bin -p
 
-    wget --tries=$max_retries --timeout=$timeout -O $ROOTFS_DIR/usr/local/bin/proot "https://raw.githubusercontent.com/dxomg/vpsfreepterovm/main/proot-${ARCH}"
+    curl -L --retry $max_retries --max-time $timeout -o $ROOTFS_DIR/usr/local/bin/proot \
+    "https://raw.githubusercontent.com/dxomg/vpsfreepterovm/main/proot-${ARCH}"
 
-  while [ ! -s "$ROOTFS_DIR/usr/local/bin/proot" ]; do
-      rm $ROOTFS_DIR/usr/local/bin/proot -rf
-      wget --tries=$max_retries --timeout=$timeout -O $ROOTFS_DIR/usr/local/bin/proot "https://raw.githubusercontent.com/dxomg/vpsfreepterovm/main/proot-${ARCH}"
-  
-      if [ -s "$ROOTFS_DIR/usr/local/bin/proot" ]; then
-          # Make PRoot executable.
-          chmod 755 $ROOTFS_DIR/usr/local/bin/proot
-          break  # Exit the loop since the file is not empty
-      fi
-      
-      chmod 755 $ROOTFS_DIR/usr/local/bin/proot
-      sleep 1  # Add a delay before retrying to avoid hammering the server
-  done
-  
-  chmod 755 $ROOTFS_DIR/usr/local/bin/proot
-
+    while [ ! -s "$ROOTFS_DIR/usr/local/bin/proot" ]; do
+        rm $ROOTFS_DIR/usr/local/bin/proot -rf
+        curl -L --retry $max_retries --max-time $timeout -o $ROOTFS_DIR/usr/local/bin/proot \
+        "https://raw.githubusercontent.com/dxomg/vpsfreepterovm/main/proot-${ARCH}"
+    
+        if [ -s "$ROOTFS_DIR/usr/local/bin/proot" ]; then
+            # Make PRoot executable.
+            chmod 755 $ROOTFS_DIR/usr/local/bin/proot
+            break  # Exit the loop since the file is not empty
+        fi
+        
+        chmod 755 $ROOTFS_DIR/usr/local/bin/proot
+        sleep 1  # Add a delay before retrying to avoid hammering the server
+    done
+    
+    chmod 755 $ROOTFS_DIR/usr/local/bin/proot
 fi
 
 # Clean-up after installation complete & finish up.
@@ -115,8 +110,6 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
     touch $ROOTFS_DIR/.installed
 fi
 
-# Print some useful information to the terminal before entering PRoot.
-# This is to introduce the user with the various Alpine Linux commands.
 # Define color variables
 BLACK='\e[0;30m'
 BOLD_BLACK='\e[1;30m'
@@ -138,7 +131,6 @@ BOLD_WHITE='\e[1;37m'
 # Reset text color
 RESET_COLOR='\e[0m'
 
-
 # Function to display the header
 display_header() {
     echo -e "${BOLD_MAGENTA} __      __        ______"
@@ -156,8 +148,8 @@ display_header() {
 
 # Function to display system resources
 display_resources() {
-	echo -e " INSTALLER OS -> ${RED} $(cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2) ${RESET_COLOR}"
-	echo -e ""
+    echo -e " INSTALLER OS -> ${RED} $(cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2) ${RESET_COLOR}"
+    echo -e ""
     echo -e " CPU -> ${YELLOW} $(cat /proc/cpuinfo | grep 'model name' | cut -d':' -f2- | sed 's/^ *//;s/  \+/ /g' | head -n 1) ${RESET_COLOR}"
     echo -e " RAM -> ${BOLD_GREEN}${SERVER_MEMORY}MB${RESET_COLOR}"
     echo -e " PRIMARY PORT -> ${BOLD_GREEN}${SERVER_PORT}${RESET_COLOR}"
@@ -167,8 +159,8 @@ display_resources() {
 }
 
 display_footer() {
-	echo -e "${BOLD_MAGENTA}___________________________________________________${RESET_COLOR}"
-	echo -e ""
+    echo -e "${BOLD_MAGENTA}___________________________________________________${RESET_COLOR}"
+    echo -e ""
     echo -e "           ${YELLOW}-----> VPS HAS STARTED <----${RESET_COLOR}"
 }
 
@@ -178,7 +170,6 @@ clear
 display_header
 display_resources
 display_footer
-
 
 ###########################
 # Start PRoot environment #
