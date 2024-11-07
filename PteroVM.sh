@@ -1,4 +1,10 @@
-#!/bin/sh
+#!/bin/bash
+
+PURPLE='\033[0;35m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
 
 #############################
 # Linux Installation #
@@ -10,8 +16,7 @@ ROOTFS_DIR=/home/container
 
 export PATH=$PATH:~/.local/usr/bin
 
-max_retries=50
-timeout=3
+PROOT_VERSION="5.4.0"
 
 # Detect the machine architecture.
 ARCH=$(uname -m)
@@ -19,162 +24,278 @@ ARCH=$(uname -m)
 # Check machine architecture to make sure it is supported.
 # If not, we exit with a non-zero status code.
 if [ "$ARCH" = "x86_64" ]; then
-  ARCH_ALT="amd64"
-elif [ "$ARCH" = "aarch64" ]; then
-  ARCH_ALT="arm64"
+    ARCH_ALT=amd64
+    elif [ "$ARCH" = "aarch64" ]; then
+    ARCH_ALT=arm64
+    elif [ "$ARCH" = "riscv64" ]; then
+    ARCH_ALT=riscv64
 else
-  printf "Unsupported CPU architecture: ${ARCH}"
-  exit 1
+    printf "Unsupported CPU architecture: ${ARCH}"
+    exit 1
 fi
 
-# Download & decompress the Linux root file system if not already installed.
-if [ ! -e $ROOTFS_DIR/.installed ]; then
-echo "#######################################################################################"
-echo "#"
-echo "#                                  VPSFREE.ES PteroVM"
-echo "#"
-echo "#                           Copyright (C) 2022 - 2023, VPSFREE.ES"
-echo "#"
-echo "#"
-echo "#######################################################################################"
-echo ""
-echo "* [0] Debian"
-echo "* [1] Ubuntu"
-echo "* [2] Alpine"
+# Base mirror url
+BASE_URL="https://images.linuxcontainers.org/images"
 
-read -p "Enter OS (0-3): " input
+# Function to install a specific distro
+install() {
+    local distro_name="$1"
+    local pretty_name="$2"
+    local is_custom="$3"
 
-case $input in
-    0)
-    curl -L --retry $max_retries --max-time $timeout -o /tmp/rootfs.tar.xz \
-    "https://github.com/termux/proot-distro/releases/download/v4.7.0/debian-bullseye-${ARCH}-pd-v4.7.0.tar.xz"
-    apt download xz-utils
-    deb_file=$(find $ROOTFS_DIR -name "*.deb" -type f)
-    dpkg -x $deb_file ~/.local/
-    rm "$deb_file"
+    # Determine if it's a custom install  (Has more than one flavor for each version)
+    # e.g musl, glibc for voidlinux
+    if [[ "$is_custom" == "true" ]]; then
+        # Fetch the directory listing and extract the image names
+        image_names=$(curl -s "$BASE_URL/$distro_name/current/$ARCH_ALT/" | grep -oP '(?<=href=")[^/]+(?=/")' | grep -v '^\.\.$')
+    else
+        # Fetch the directory listing and extract the image names
+        image_names=$(curl -s "$BASE_URL/$distro_name/" | grep -oP '(?<=href=")[^/]+(?=/")' | grep -v '^\.\.$')
+    fi
+    # Convert the space-separated string into an array
+    set -- $image_names
+    image_names=("$@")
     
-    tar -xJf /tmp/rootfs.tar.xz -C $ROOTFS_DIR --strip-components=1;;
+    # Display the available versions
+    for i in "${!image_names[@]}"; do
+        echo "* [$((i + 1))] ${pretty_name} (${image_names[i]})"
+    done
+    
+    # Enter the the desired version
+    echo -e "${YELLOW}Enter the desired version (1-${#image_names[@]}): ${NC}"
+    read -p "" version
+    
+    # Validate the input
+    if [[ $version -lt 1 || $version -gt ${#image_names[@]} ]]; then
+        echo -e "${RED}Invalid selection. Exiting.${NC}"
+        exit 1
+    fi
+    
+    # Get the selected version
+    selected_version=${image_names[$((version - 1))]}
+    echo -e "${GREEN}Installing $pretty_name (${selected_version})...${NC}"
+    
+    # Determine if it's a custom install to check whether your architecture is supported and obtain the URL accordingly 
+    if [[ "$is_custom" == "true" ]]; then
+        ARCH_URL="${BASE_URL}/${distro_name}/current/"
+        URL="$BASE_URL/${distro_name}/current/$ARCH_ALT/$selected_version/"
+    else
+        ARCH_URL="${BASE_URL}/${distro_name}/${selected_version}/"
+        URL="${BASE_URL}/${distro_name}/${selected_version}/${ARCH_ALT}/default/"
+    fi
 
-    1)
-    curl -L --retry $max_retries --max-time $timeout -o /tmp/rootfs.tar.gz \
-    "https://github.com/termux/proot-distro/releases/download/v4.11.0/ubuntu-noble-${ARCH}-pd-v4.11.0.tar.xz"
+    # Check if the distro support $ARCH_ALT
+    if ! curl -s "$ARCH_URL" | grep -q "$ARCH_ALT"; then
+        echo -e "${RED}Error: This distro doesn't support $ARCH_ALT. Exiting.${NC}"
+        exit 1
+    fi
 
-    tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR --strip-components=1;;
+    # Fetch the latest version of the root filesystem
+    LATEST_VERSION=$(curl -s "$URL" | grep -oP 'href="\K[^"]+/' | sort -r | head -n 1)
+    
+    # Download and extract the root filesystem
+    mkdir -p "$ROOTFS_DIR"
+    curl -Ls "${URL}${LATEST_VERSION}/rootfs.tar.xz" -o "$ROOTFS_DIR/rootfs.tar.xz"
+    tar -xf "$ROOTFS_DIR/rootfs.tar.xz" -C "$ROOTFS_DIR"
+    mkdir -p "$ROOTFS_DIR/home/container/"
+}
 
-    2)
-    curl -L --retry $max_retries --max-time $timeout -o /tmp/rootfs.tar.gz \
-    "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-minirootfs-3.19.1-${ARCH}.tar.gz"
+# Function to install a specific distro (custom) from a specific URL
+install_custom() {
+    local pretty_name="$1" 
+    local URL="$2"   
 
-    tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR;;
-esac
+    # Download and extract the root filesystem
+    mkdir -p "$ROOTFS_DIR"
 
+    # Get rootfs file name from URL
+    FILE_NAME=$(basename "${URL}")
+    # Print to screen what's currently installing
+    echo -e "${GREEN}Installing $pretty_name ...${NC}"
+    # Download the rootfs image to $ROOTFS_DIR
+    curl -Ls "${URL}" -o "$ROOTFS_DIR/$FILE_NAME" || exit 1
+    # Extract rootfs image to ROOTFS_DIR
+    tar -xf "$ROOTFS_DIR/$FILE_NAME" -C "$ROOTFS_DIR"
+    # Create ROOTFS_DIR/home/container/ dir
+    mkdir -p "$ROOTFS_DIR/home/container/"
+
+    # Check whether the OS is installed, then delete the rootfs image file
+    if [ ! -e "$ROOTFS_DIR/.installed" ]; then
+        rm $ROOTFS_DIR/$FILE_NAME
+    fi
+}
+
+# Function to get Chimera Linux
+get_chimera_linux() {
+    local base_url="https://repo.chimera-linux.org/live/latest/"
+
+    local latest_file=$(curl -s "$base_url" | grep -oP "chimera-linux-$ARCH-ROOTFS-\d{8}-bootstrap\.tar\.gz" | sort -V | tail -n 1)
+    if [ -n "$latest_file" ]; then
+        local date=$(echo "$latest_file" | grep -oP '\d{8}')
+        echo "${base_url}chimera-linux-$ARCH-ROOTFS-$date-bootstrap.tar.gz"
+    else
+        exit 1
+    fi
+}
+
+# Download & decompress the Linux root file system if not already installed.
+if [ ! -e "$ROOTFS_DIR/.installed" ]; then
+    
+    # Clear the terminal
+    printf "\033c"
+    
+    # Display the menu
+    echo -e "${GREEN}╭────────────────────────────────────────────────────────────────────────────────╮${NC}"
+    echo -e "${GREEN}│                                                                                │${NC}"
+    echo -e "${GREEN}│                             Pterodactyl VPS EGG                                │${NC}"
+    echo -e "${GREEN}│                                                                                │${NC}"
+    echo -e "${GREEN}│                           ${RED}© 2021 - 2024 ${PURPLE}ysdragon${GREEN}                               │${NC}"
+    echo -e "${GREEN}│                                                                                │${NC}"
+    echo -e "${GREEN}╰────────────────────────────────────────────────────────────────────────────────╯${NC}"
+    echo "                                                                                               "
+    echo -e "${YELLOW}Please choose your favorite distro                                               ${NC}"
+    echo "                                                                                               "
+    echo "* [1] Debian                                                                                   "
+    echo "* [2] Ubuntu                                                                                   "
+    echo "* [3] Void Linux                                                                               "
+    echo "* [4] Alpine Linux                                                                             "
+    echo "* [5] CentOS                                                                                   "
+    echo "* [6] Rocky Linux                                                                              "
+    echo "* [7] Fedora                                                                                   "
+    echo "* [8] AlmaLinux                                                                                "
+    echo "* [9] Slackware Linux                                                                          "
+    echo "* [10] Kali Linux                                                                              "
+    echo "* [11] openSUSE                                                                                "
+    echo "* [12] Gentoo Linux                                                                            "
+    echo "* [13] Arch Linux                                                                              "
+    echo "* [14] Devuan Linux                                                                            "
+    echo "* [15] Chimera Linux                                                                           "
+    echo "                                                                                               "
+    echo -e "${YELLOW}Enter OS (1-14):                                                                 ${NC}"
+    
+    read -p "" input
+    
+    case $input in
+        
+        1)
+            install             "debian"        "Debian"
+        ;;
+        
+        2)
+            install             "ubuntu"        "Ubuntu"
+        ;;
+        
+        3)
+            install             "voidlinux"     "Void Linux"         "true"
+        ;;
+        
+        4)
+            install             "alpine"        "Alpine Linux"
+        ;;
+        
+        5)
+            install             "centos"        "CentOS"
+        ;;
+        
+        6)
+            install             "rockylinux"    "Rocky Linux"
+        ;;
+        
+        7)
+            install             "fedora"        "Fedora"
+        ;;
+        
+        8)
+            install             "almalinux"     "Alma Linux"
+        ;;
+        
+        9)
+            install             "slackware"     "Slackware"
+        ;;
+        
+        
+        10)
+            install             "kali"          "Kali Linux"
+        ;;
+        
+        11)
+            install             "opensuse"      "openSUSE"
+        ;;
+        
+        12)
+            install             "gentoo"        "Gentoo Linux"         "true"
+        ;;
+        
+        13)
+            install             "archlinux"     "Arch Linux"
+            
+            # Fix pacman
+            sed -i '/^#RootDir/s/^#//' "$ROOTFS_DIR/etc/pacman.conf"
+            sed -i 's|/var/lib/pacman/|/var/lib/pacman|' "$ROOTFS_DIR/etc/pacman.conf"
+            sed -i '/^#DBPath/s/^#//' "$ROOTFS_DIR/etc/pacman.conf"
+        ;;
+        
+        14)
+            install             "devuan"        "Devuan Linux"
+        ;;
+
+        15)
+            install_custom      "Chimera Linux"        $(get_chimera_linux)
+        ;;
+
+        ## An example of the usage of the install_custom function
+        # 16)
+        #     install_custom      "Debian"        "https://github.com/JuliaCI/rootfs-images/releases/download/v7.10/debian_minimal.aarch64.tar.gz"
+        # ;;
+
+        *)
+            echo -e "${RED}Invalid selection. Exiting.${NC}"
+            exit 1
+        ;;
+    esac
 fi
 
 ################################
 # Package Installation & Setup #
-################################
+#################################
 
-# Download static APK-Tools temporarily because minirootfs does not come with APK pre-installed.
-if [ ! -e $ROOTFS_DIR/.installed ]; then
-    # Download the packages from their sources
-    mkdir $ROOTFS_DIR/usr/local/bin -p
-
-    curl -L --retry $max_retries --max-time $timeout -o $ROOTFS_DIR/usr/local/bin/proot \
-    "https://raw.githubusercontent.com/dxomg/vpsfreepterovm/main/proot-${ARCH}"
-
-    while [ ! -s "$ROOTFS_DIR/usr/local/bin/proot" ]; do
-        rm $ROOTFS_DIR/usr/local/bin/proot -rf
-        curl -L --retry $max_retries --max-time $timeout -o $ROOTFS_DIR/usr/local/bin/proot \
-        "https://raw.githubusercontent.com/dxomg/vpsfreepterovm/main/proot-${ARCH}"
-    
-        if [ -s "$ROOTFS_DIR/usr/local/bin/proot" ]; then
-            # Make PRoot executable.
-            chmod 755 $ROOTFS_DIR/usr/local/bin/proot
-            break  # Exit the loop since the file is not empty
-        fi
-        
-        chmod 755 $ROOTFS_DIR/usr/local/bin/proot
-        sleep 1  # Add a delay before retrying to avoid hammering the server
-    done
-    
-    chmod 755 $ROOTFS_DIR/usr/local/bin/proot
+# Download static proot.
+if [ ! -e "$ROOTFS_DIR/.installed" ]; then
+    # Create "$ROOTFS_DIR/usr/local/bin" dir
+    mkdir -p "$ROOTFS_DIR/usr/local/bin"
+    # Download static proot.
+    curl -Ls "https://github.com/ysdragon/proot-static/releases/download/v${PROOT_VERSION}/proot-${ARCH}-static" -o "$ROOTFS_DIR/usr/local/bin/proot"
+    # Make PRoot executable.
+    chmod 755 "$ROOTFS_DIR/usr/local/bin/proot"
 fi
 
 # Clean-up after installation complete & finish up.
-if [ ! -e $ROOTFS_DIR/.installed ]; then
+if [ ! -e "$ROOTFS_DIR/.installed" ]; then
     # Add DNS Resolver nameservers to resolv.conf.
-    printf "nameserver 1.1.1.1\nnameserver 1.0.0.1" > ${ROOTFS_DIR}/etc/resolv.conf
+    printf "nameserver 1.1.1.1\nnameserver 1.0.0.1" > "${ROOTFS_DIR}/etc/resolv.conf"
     # Wipe the files we downloaded into /tmp previously.
-    rm -rf /tmp/rootfs.tar.xz /tmp/sbin
-    # Create .installed to later check whether Alpine is installed.
-    touch $ROOTFS_DIR/.installed
+    rm -rf $ROOTFS_DIR/rootfs.tar.xz /tmp/sbin
+    # Create .installed to later check whether OS is installed.
+    touch "$ROOTFS_DIR/.installed"
 fi
-
-# Define color variables
-BLACK='\e[0;30m'
-BOLD_BLACK='\e[1;30m'
-RED='\e[0;31m'
-BOLD_RED='\e[1;31m'
-GREEN='\e[0;32m'
-BOLD_GREEN='\e[1;32m'
-YELLOW='\e[0;33m'
-BOLD_YELLOW='\e[1;33m'
-BLUE='\e[0;34m'
-BOLD_BLUE='\e[1;34m'
-MAGENTA='\e[0;35m'
-BOLD_MAGENTA='\e[1;35m'
-CYAN='\e[0;36m'
-BOLD_CYAN='\e[1;36m'
-WHITE='\e[0;37m'
-BOLD_WHITE='\e[1;37m'
-
-# Reset text color
-RESET_COLOR='\e[0m'
-
-# Function to display the header
-display_header() {
-    echo -e "${BOLD_MAGENTA} __      __        ______"
-    echo -e "${BOLD_MAGENTA} \ \    / /       |  ____|"
-    echo -e "${BOLD_MAGENTA}  \ \  / / __  ___| |__ _ __ ___  ___   ___  ___"
-    echo -e "${BOLD_MAGENTA}   \ \/ / '_ \/ __|  __| '__/ _ \/ _ \ / _ \/ __|"
-    echo -e "${BOLD_MAGENTA}    \  /| |_) \__ \ |  | | |  __/  __/|  __/\__ \\"
-    echo -e "${BOLD_MAGENTA}     \/ | .__/|___/_|  |_|  \___|\___(_)___||___/"
-    echo -e "${BOLD_MAGENTA}        | |"
-    echo -e "${BOLD_MAGENTA}        |_|"
-    echo -e "${BOLD_MAGENTA}___________________________________________________"
-    echo -e "           ${YELLOW}-----> System Resources <----${RESET_COLOR}"
-    echo -e ""
-}
-
-# Function to display system resources
-display_resources() {
-    echo -e " INSTALLER OS -> ${RED} $(cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2) ${RESET_COLOR}"
-    echo -e ""
-    echo -e " CPU -> ${YELLOW} $(cat /proc/cpuinfo | grep 'model name' | cut -d':' -f2- | sed 's/^ *//;s/  \+/ /g' | head -n 1) ${RESET_COLOR}"
-    echo -e " RAM -> ${BOLD_GREEN}${SERVER_MEMORY}MB${RESET_COLOR}"
-    echo -e " PRIMARY PORT -> ${BOLD_GREEN}${SERVER_PORT}${RESET_COLOR}"
-    echo -e " EXTRA PORTS -> ${BOLD_GREEN}${P_SERVER_ALLOCATION_LIMIT}${RESET_COLOR}"
-    echo -e " SERVER UUID -> ${BOLD_GREEN}${P_SERVER_UUID}${RESET_COLOR}"
-    echo -e " LOCATION -> ${BOLD_GREEN}${P_SERVER_LOCATION}${RESET_COLOR}"
-}
-
-display_footer() {
-    echo -e "${BOLD_MAGENTA}___________________________________________________${RESET_COLOR}"
-    echo -e ""
-    echo -e "           ${YELLOW}-----> VPS HAS STARTED <----${RESET_COLOR}"
-}
-
-# Main script execution
-clear
-
-display_header
-display_resources
-display_footer
 
 ###########################
 # Start PRoot environment #
 ###########################
 
+# Get all ports from vps.config
+port_args=""
+while read line; do
+    case "$line" in
+        internalip=*) ;;
+        port[0-9]*=*) port=${line#*=}; if [ -n "$port" ]; then port_args=" -p $port:$port$port_args"; fi;;
+        port=*) port=${line#*=}; if [ -n "$port" ]; then port_args=" -p $port:$port$port_args"; fi;;
+    esac
+done < "$ROOTFS_DIR/vps.config"
+
 # This command starts PRoot and binds several important directories
 # from the host file system to our special root file system.
-$ROOTFS_DIR/usr/local/bin/proot --rootfs="${ROOTFS_DIR}" -0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit
+"$ROOTFS_DIR/usr/local/bin/proot" \
+--rootfs="${ROOTFS_DIR}" \
+-0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf $port_args --kill-on-exit \
+/bin/sh "/run.sh"
