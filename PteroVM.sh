@@ -127,10 +127,12 @@ install_custom() {
 # Function to get Chimera Linux
 get_chimera_linux() {
     local base_url="https://repo.chimera-linux.org/live/latest/"
-
-    local latest_file=$(curl -s "$base_url" | grep -o "chimera-linux-$ARCH-ROOTFS-[0-9]\{8\}-bootstrap\.tar\.gz" | sort -V | tail -n 1)
+    local latest_file
+    
+    latest_file=$(curl -s "$base_url" | grep -o "chimera-linux-$ARCH-ROOTFS-[0-9]\{8\}-bootstrap\.tar\.gz" | sort -V | tail -n 1)
     if [ -n "$latest_file" ]; then
-        local date=$(echo "$latest_file" | grep -o '[0-9]\{8\}')
+        local date
+        date=$(echo "$latest_file" | grep -o '[0-9]\{8\}')
         echo "${base_url}chimera-linux-$ARCH-ROOTFS-$date-bootstrap.tar.gz"
     else
         exit 1
@@ -195,7 +197,10 @@ if [ ! -e "$ROOTFS_DIR/.installed" ]; then
             sed -i '/^#DBPath/s/^#//' "$ROOTFS_DIR/etc/pacman.conf"
             ;;
         14) install "devuan" "Devuan Linux" ;;
-        15) install_custom "Chimera Linux" "$(get_chimera_linux)" ;;
+        15) 
+            CHIMERA_URL=$(get_chimera_linux)
+            install_custom "Chimera Linux" "$CHIMERA_URL"
+            ;;
         *)
             echo -e "${RED}Invalid selection. Exiting.${NC}"
             exit 1
@@ -233,20 +238,28 @@ fi
 
 # Process ports from vps.config
 port_args=""
-while IFS='=' read -r key value; do
-    case "$key" in
-        internalip) continue ;;
-        port*) 
-            if [ -n "$value" ]; then
-                port_args="$port_args -p $value:$value"
-            fi
-            ;;
-    esac
-done < "$ROOTFS_DIR/vps.config"
+if [ -f "$ROOTFS_DIR/vps.config" ]; then
+    while IFS='=' read -r key value || [ -n "$key" ]; do
+        # Skip empty lines and comments
+        [ -z "$key" ] || [ "${key:0:1}" = "#" ] && continue
+        
+        # Remove any trailing whitespace
+        value=${value%% *}
+        
+        case "$key" in
+            internalip) continue ;;
+            port*) 
+                if [ -n "$value" ]; then
+                    port_args="$port_args -p $value:$value"
+                fi
+                ;;
+        esac
+    done < "$ROOTFS_DIR/vps.config"
+fi
 
 # This command starts PRoot and binds several important directories
 # from the host file system to our special root file system.
-"$ROOTFS_DIR/usr/local/bin/proot" \
+exec "$ROOTFS_DIR/usr/local/bin/proot" \
 --rootfs="${ROOTFS_DIR}" \
 -0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf $port_args --kill-on-exit \
 /bin/sh "/run.sh"
