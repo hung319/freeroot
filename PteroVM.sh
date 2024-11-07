@@ -25,9 +25,9 @@ ARCH=$(uname -m)
 # If not, we exit with a non-zero status code.
 if [ "$ARCH" = "x86_64" ]; then
     ARCH_ALT=amd64
-elif [ "$ARCH" = "aarch64" ]; then
+    elif [ "$ARCH" = "aarch64" ]; then
     ARCH_ALT=arm64
-elif [ "$ARCH" = "riscv64" ]; then
+    elif [ "$ARCH" = "riscv64" ]; then
     ARCH_ALT=riscv64
 else
     printf "Unsupported CPU architecture: ${ARCH}"
@@ -45,7 +45,7 @@ install() {
 
     # Determine if it's a custom install  (Has more than one flavor for each version)
     # e.g musl, glibc for voidlinux
-    if [ "$is_custom" = "true" ]; then
+    if [[ "$is_custom" == "true" ]]; then
         # Fetch the directory listing and extract the image names
         image_names=$(curl -s "$BASE_URL/$distro_name/current/$ARCH_ALT/" | grep 'href="' | grep -o '"[^/"]*/"' | tr -d '"/' | grep -v '^\.\.$')
     else
@@ -53,19 +53,20 @@ install() {
         image_names=$(curl -s "$BASE_URL/$distro_name/" | grep 'href="' | grep -o '"[^/"]*/"' | tr -d '"/' | grep -v '^\.\.$')
     fi
     # Convert the space-separated string into an array
-    read -r -a image_names <<< "$image_names"
+    set -- $image_names
+    image_names=("$@")
     
     # Display the available versions
     for i in "${!image_names[@]}"; do
         echo "* [$((i + 1))] ${pretty_name} (${image_names[i]})"
     done
     
-    # Enter the desired version
+    # Enter the the desired version
     echo -e "${YELLOW}Enter the desired version (1-${#image_names[@]}): ${NC}"
-    read -r version
+    read -p "" version
     
     # Validate the input
-    if [ "$version" -lt 1 ] || [ "$version" -gt "${#image_names[@]}" ]; then
+    if [[ $version -lt 1 || $version -gt ${#image_names[@]} ]]; then
         echo -e "${RED}Invalid selection. Exiting.${NC}"
         exit 1
     fi
@@ -75,7 +76,7 @@ install() {
     echo -e "${GREEN}Installing $pretty_name (${selected_version})...${NC}"
     
     # Determine if it's a custom install to check whether your architecture is supported and obtain the URL accordingly 
-    if [ "$is_custom" = "true" ]; then
+    if [[ "$is_custom" == "true" ]]; then
         ARCH_URL="${BASE_URL}/${distro_name}/current/"
         URL="$BASE_URL/${distro_name}/current/$ARCH_ALT/$selected_version/"
     else
@@ -120,19 +121,17 @@ install_custom() {
 
     # Check whether the OS is installed, then delete the rootfs image file
     if [ ! -e "$ROOTFS_DIR/.installed" ]; then
-        rm "$ROOTFS_DIR/$FILE_NAME"
+        rm $ROOTFS_DIR/$FILE_NAME
     fi
 }
 
 # Function to get Chimera Linux
 get_chimera_linux() {
     local base_url="https://repo.chimera-linux.org/live/latest/"
-    local latest_file
-    
-    latest_file=$(curl -s "$base_url" | grep -o "chimera-linux-$ARCH-ROOTFS-[0-9]\{8\}-bootstrap\.tar\.gz" | sort -V | tail -n 1)
+
+    local latest_file=$(curl -s "$base_url" | grep -o "chimera-linux-$ARCH-ROOTFS-[0-9]\{8\}-bootstrap\.tar\.gz" | sort -V | tail -n 1)
     if [ -n "$latest_file" ]; then
-        local date
-        date=$(echo "$latest_file" | grep -o '[0-9]\{8\}')
+        local date=$(echo "$latest_file" | grep -o '[0-9]\{8\}')
         echo "${base_url}chimera-linux-$ARCH-ROOTFS-$date-bootstrap.tar.gz"
     else
         exit 1
@@ -172,39 +171,87 @@ if [ ! -e "$ROOTFS_DIR/.installed" ]; then
     echo "* [14] Devuan Linux                                                                            "
     echo "* [15] Chimera Linux                                                                           "
     echo "                                                                                               "
-    echo -e "${YELLOW}Enter OS (1-15):                                                                 ${NC}"
+    echo -e "${YELLOW}Enter OS (1-14):                                                                 ${NC}"
     
-    read -r input
+    read -p "" input
     
     case $input in
-        1) install "debian" "Debian" ;;
-        2) install "ubuntu" "Ubuntu" ;;
-        3) install "voidlinux" "Void Linux" "true" ;;
-        4) install "alpine" "Alpine Linux" ;;
-        5) install "centos" "CentOS" ;;
-        6) install "rockylinux" "Rocky Linux" ;;
-        7) install "fedora" "Fedora" ;;
-        8) install "almalinux" "Alma Linux" ;;
-        9) install "slackware" "Slackware" ;;
-        10) install "kali" "Kali Linux" ;;
-        11) install "opensuse" "openSUSE" ;;
-        12) install "gentoo" "Gentoo Linux" "true" ;;
-        13) 
-            install "archlinux" "Arch Linux"
+        
+        1)
+            install             "debian"        "Debian"
+        ;;
+        
+        2)
+            install             "ubuntu"        "Ubuntu"
+        ;;
+        
+        3)
+            install             "voidlinux"     "Void Linux"         "true"
+        ;;
+        
+        4)
+            install             "alpine"        "Alpine Linux"
+        ;;
+        
+        5)
+            install             "centos"        "CentOS"
+        ;;
+        
+        6)
+            install             "rockylinux"    "Rocky Linux"
+        ;;
+        
+        7)
+            install             "fedora"        "Fedora"
+        ;;
+        
+        8)
+            install             "almalinux"     "Alma Linux"
+        ;;
+        
+        9)
+            install             "slackware"     "Slackware"
+        ;;
+        
+        
+        10)
+            install             "kali"          "Kali Linux"
+        ;;
+        
+        11)
+            install             "opensuse"      "openSUSE"
+        ;;
+        
+        12)
+            install             "gentoo"        "Gentoo Linux"         "true"
+        ;;
+        
+        13)
+            install             "archlinux"     "Arch Linux"
+            
             # Fix pacman
             sed -i '/^#RootDir/s/^#//' "$ROOTFS_DIR/etc/pacman.conf"
             sed -i 's|/var/lib/pacman/|/var/lib/pacman|' "$ROOTFS_DIR/etc/pacman.conf"
             sed -i '/^#DBPath/s/^#//' "$ROOTFS_DIR/etc/pacman.conf"
-            ;;
-        14) install "devuan" "Devuan Linux" ;;
-        15) 
-            CHIMERA_URL=$(get_chimera_linux)
-            install_custom "Chimera Linux" "$CHIMERA_URL"
-            ;;
+        ;;
+        
+        14)
+            install             "devuan"        "Devuan Linux"
+        ;;
+
+        15)
+            install_custom      "Chimera Linux"        $(get_chimera_linux)
+        ;;
+
+        ## An example of the usage of the install_custom function
+        # 16)
+        #     install_custom      "Debian"        "https://github.com/JuliaCI/rootfs-images/releases/download/v7.10/debian_minimal.aarch64.tar.gz"
+        # ;;
+
         *)
             echo -e "${RED}Invalid selection. Exiting.${NC}"
             exit 1
-            ;;
+        ;;
     esac
 fi
 
@@ -227,7 +274,7 @@ if [ ! -e "$ROOTFS_DIR/.installed" ]; then
     # Add DNS Resolver nameservers to resolv.conf.
     printf "nameserver 1.1.1.1\nnameserver 1.0.0.1" > "${ROOTFS_DIR}/etc/resolv.conf"
     # Wipe the files we downloaded into /tmp previously.
-    rm -rf "$ROOTFS_DIR/rootfs.tar.xz" /tmp/sbin
+    rm -rf $ROOTFS_DIR/rootfs.tar.xz /tmp/sbin
     # Create .installed to later check whether OS is installed.
     touch "$ROOTFS_DIR/.installed"
 fi
@@ -236,30 +283,19 @@ fi
 # Start PRoot environment #
 ###########################
 
-# Process ports from vps.config
+# Get all ports from vps.config
 port_args=""
-if [ -f "$ROOTFS_DIR/vps.config" ]; then
-    while IFS='=' read -r key value || [ -n "$key" ]; do
-        # Skip empty lines and comments
-        [ -z "$key" ] || [ "${key:0:1}" = "#" ] && continue
-        
-        # Remove any trailing whitespace
-        value=${value%% *}
-        
-        case "$key" in
-            internalip) continue ;;
-            port*) 
-                if [ -n "$value" ]; then
-                    port_args="$port_args -p $value:$value"
-                fi
-                ;;
-        esac
-    done < "$ROOTFS_DIR/vps.config"
-fi
+while read line; do
+    case "$line" in
+        internalip=*) ;;
+        port[0-9]*=*) port=${line#*=}; if [ -n "$port" ]; then port_args=" -p $port:$port$port_args"; fi;;
+        port=*) port=${line#*=}; if [ -n "$port" ]; then port_args=" -p $port:$port$port_args"; fi;;
+    esac
+done < "$ROOTFS_DIR/vps.config"
 
 # This command starts PRoot and binds several important directories
 # from the host file system to our special root file system.
-exec "$ROOTFS_DIR/usr/local/bin/proot" \
+"$ROOTFS_DIR/usr/local/bin/proot" \
 --rootfs="${ROOTFS_DIR}" \
 -0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf $port_args --kill-on-exit \
 /bin/sh "/run.sh"
