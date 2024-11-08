@@ -1,52 +1,74 @@
 #!/bin/bash
-HOME="/home/container"
-HOMEA="$HOME/linux/.apt"
-STAR1="$HOMEA/lib:$HOMEA/usr/lib:$HOMEA/var/lib:$HOMEA/usr/lib/x86_64-linux-gnu:$HOMEA/lib/x86_64-linux-gnu:$HOMEA/lib:$HOMEA/usr/lib/sudo"
-STAR2="$HOMEA/usr/include/x86_64-linux-gnu:$HOMEA/usr/include/x86_64-linux-gnu/bits:$HOMEA/usr/include/x86_64-linux-gnu/gnu"
-STAR3="$HOMEA/usr/share/lintian/overrides/:$HOMEA/usr/src/glibc/debian/:$HOMEA/usr/src/glibc/debian/debhelper.in:$HOMEA/usr/lib/mono"
-STAR4="$HOMEA/usr/src/glibc/debian/control.in:$HOMEA/usr/lib/x86_64-linux-gnu/libcanberra-0.30:$HOMEA/usr/lib/x86_64-linux-gnu/libgtk2.0-0"
-STAR5="$HOMEA/usr/lib/x86_64-linux-gnu/gtk-2.0/modules:$HOMEA/usr/lib/x86_64-linux-gnu/gtk-2.0/2.10.0/immodules:$HOMEA/usr/lib/x86_64-linux-gnu/gtk-2.0/2.10.0/printbackends"
-STAR6="$HOMEA/usr/lib/x86_64-linux-gnu/samba/:$HOMEA/usr/lib/x86_64-linux-gnu/pulseaudio:$HOMEA/usr/lib/x86_64-linux-gnu/blas:$HOMEA/usr/lib/x86_64-linux-gnu/blis-serial"
-STAR7="$HOMEA/usr/lib/x86_64-linux-gnu/blis-openmp:$HOMEA/usr/lib/x86_64-linux-gnu/atlas:$HOMEA/usr/lib/x86_64-linux-gnu/tracker-miners-2.0:$HOMEA/usr/lib/x86_64-linux-gnu/tracker-2.0:$HOMEA/usr/lib/x86_64-linux-gnu/lapack:$HOMEA/usr/lib/x86_64-linux-gnu/gedit"
-STARALL="$STAR1:$STAR2:$STAR3:$STAR4:$STAR5:$STAR6:$STAR7"
-export LD_LIBRARY_PATH=$STARALL
-export PATH="$HOMEA/bin:$HOMEA/usr/bin:$HOMEA/sbin:$HOMEA/usr/sbin:$HOMEA/etc/init.d:$PATH"
-export BUILD_DIR=$HOMEA
 
-bold=$(echo -en "\e[1m")
-nc=$(echo -en "\e[0m")
-lightblue=$(echo -en "\e[94m")
-lightgreen=$(echo -en "\e[92m")
-clear
+ROOTFS_DIR=$(pwd)
+export PATH=$PATH:~/.local/usr/bin
+max_retries=50
+timeout=10
+ARCH=$(uname -m)
+PROOT_VERSION="5.3.0"
 
-if [[ -f "./installed" ]]; then
-    echo "Starting PteroVM"
-    ./dist/proot -S . /bin/bash --login
+if [ "$ARCH" = "x86_64" ]; then
+  ARCH_ALT=amd64
+elif [ "$ARCH" = "aarch64" ]; then
+  ARCH_ALT=arm64
 else
-    echo "Downloading files for PteroVM"
-    curl -sSLo ptero-vm.zip https://cdn2.mythicalkitten.com/pterodactylmarket/ptero-vm/ptero-vm.zip
-    curl -sSLo apth https://cdn2.mythicalkitten.com/pterodactylmarket/ptero-vm/apth
-    curl -sSLo unzip https://raw.githubusercontent.com/afnan007a/Ptero-vm/main/unzip
-    chmod +x apth
-    echo "Installing the files"
-    ./apth unzip >/dev/null 
-    linux/usr/bin/unzip ptero-vm.zip
-    linux/usr/bin/unzip root.zip
-    tar -xf root.tar.gz 
-    chmod +x ./dist/proot
-    rm -rf ptero-vm.zip
-    rm -rf root.zip
-    rm -rf root.tar.gz
-    touch installed
-    ./dist/proot -S . /bin/bash -c "mv apth /usr/bin/"
-    ./dist/proot -S . /bin/bash -c "mv unzip /usr/bin/"
-    ./dist/proot -S . /bin/bash -c "apt-get update"
-    ./dist/proot -S . /bin/bash -c "apt-get -y upgrade"
-    ./dist/proot -S . /bin/bash -c "apt-get -y install curl"
-    ./dist/proot -S . /bin/bash -c "apt-get -y install wget"
-    ./dist/proot -S . /bin/bash -c "apt-get -y install neofetch"
-    ./dist/proot -S . /bin/bash -c "curl -o /bin/systemctl https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py"
-    ./dist/proot -S . /bin/bash -c "chmod +x /bin/systemctl"
-    echo "Starting PteroVM"
-    ./dist/proot -S . /bin/bash --login
+  printf "Unsupported CPU architecture: ${ARCH}"
+  exit 1
 fi
+
+if [ ! -e $ROOTFS_DIR/.installed ]; then
+  echo "#######################################################################################"
+  echo "#"
+  echo "#                                      Foxytoux INSTALLER"
+  echo "#"
+  echo "#                           Copyright (C) 2024, RecodeStudios.Cloud"
+  echo "#"
+  echo "#"
+  echo "#######################################################################################"
+
+  echo "Installing Debian latest..."
+
+  curl -L --retry $max_retries --connect-timeout $timeout -o /tmp/rootfs.tar.gz \
+    "https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/stable/slim/rootfs.tar.xz"
+  tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
+
+  mkdir $ROOTFS_DIR/usr/local/bin -p
+  curl -L --retry $max_retries --connect-timeout $timeout -o $ROOTFS_DIR/usr/local/bin/proot "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
+
+  while [ ! -s "$ROOTFS_DIR/usr/local/bin/proot" ]; do
+    rm $ROOTFS_DIR/usr/local/bin/proot -rf
+    curl -L --retry $max_retries --connect-timeout $timeout -o $ROOTFS_DIR/usr/local/bin/proot "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
+
+    if [ -s "$ROOTFS_DIR/usr/local/bin/proot" ]; then
+      chmod 755 $ROOTFS_DIR/usr/local/bin/proot
+      break
+    fi
+
+    chmod 755 $ROOTFS_DIR/usr/local/bin/proot
+    sleep 1
+  done
+
+  chmod 755 $ROOTFS_DIR/usr/local/bin/proot
+
+  printf "nameserver 1.1.1.1\nnameserver 1.0.0.1" > ${ROOTFS_DIR}/etc/resolv.conf
+  rm -rf /tmp/rootfs.tar.xz /tmp/sbin
+  touch $ROOTFS_DIR/.installed
+fi
+
+CYAN='\e[0;36m'
+WHITE='\e[0;37m'
+
+RESET_COLOR='\e[0m'
+
+display_gg() {
+  echo -e "${WHITE}___________________________________________________${RESET_COLOR}"
+  echo -e ""
+  echo -e "           ${CYAN}-----> Mission Completed ! <----${RESET_COLOR}"
+}
+
+clear
+display_gg
+
+$ROOTFS_DIR/usr/local/bin/proot \
+  --rootfs="${ROOTFS_DIR}" \
+  -0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit
