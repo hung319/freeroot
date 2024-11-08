@@ -59,7 +59,7 @@ case $input in
  
     1)
     curl -Lo /tmp/rootfs.tar.gz \
-    "https://rootfs.curvee.eu.org/oci/noble/current/ubuntu-noble-oci-${ARCH_ALT}-root.tar.gz"
+    "https://rootfs.curvee.eu.org/oci/jammy/current/ubuntu-jammy-oci-${ARCH_ALT}-root.tar.gz"
 
     tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR;;
  
