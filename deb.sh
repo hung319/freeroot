@@ -112,7 +112,7 @@ BOLD_WHITE='\e[1;37m'
 RESET_COLOR='\e[0m'
 
 # Function to display the header
-display_header()
+display_header() {
     echo -e "${BOLD_MAGENTA}            LegendYt4k"
     echo -e "${BOLD_MAGENTA}               Sub"
     echo -e "${BOLD_MAGENTA}___________________________________________________"
@@ -149,8 +149,18 @@ display_footer
 # Start PRoot environment #
 ###########################
 
+# Create a script to run the commands inside PRoot
+cat > ${ROOTFS_DIR}/root/setup.sh << 'EOF'
+#!/bin/sh
+apt update
+apt install -y software-properties-common sudo
+EOF
+
+# Make the setup script executable
+chmod +x ${ROOTFS_DIR}/root/setup.sh
+
 # This command starts PRoot and binds several important directories
-# from the host file system to our special root file system.
+# from the host file system to our special root file system, then runs our setup script
 $ROOTFS_DIR/usr/local/bin/proot \
 --rootfs="${ROOTFS_DIR}" \
--0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit
+-0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit /root/setup.sh
