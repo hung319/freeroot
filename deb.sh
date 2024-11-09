@@ -113,7 +113,7 @@ RESET_COLOR='\e[0m'
 
 # Function to display the header
 display_header() {
-    echo "apt install software-properties-common sudo -y" 
+    echo "apt update && apt install software-properties-common sudo -y" 
     echo "clear"
     echo -e "${BOLD_MAGENTA}            LegendYt4k"
     echo -e "${BOLD_MAGENTA}               Sub"
