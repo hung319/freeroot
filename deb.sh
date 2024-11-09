@@ -90,28 +90,26 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
     touch $ROOTFS_DIR/.installed
 fi
 
-# Create startup script that will run on every boot
-cat > ${ROOTFS_DIR}/root/startup.sh << 'EOF'
-#!/bin/sh
-
+# Start PRoot environment and run startup commands directly
+$ROOTFS_DIR/usr/local/bin/proot --rootfs="${ROOTFS_DIR}" -0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit /bin/sh -c '
 # Define color variables
-BLACK='\e[0;30m'
-BOLD_BLACK='\e[1;30m'
-RED='\e[0;31m'
-BOLD_RED='\e[1;31m'
-GREEN='\e[0;32m'
-BOLD_GREEN='\e[1;32m'
-YELLOW='\e[0;33m'
-BOLD_YELLOW='\e[1;33m'
-BLUE='\e[0;34m'
-BOLD_BLUE='\e[1;34m'
-MAGENTA='\e[0;35m'
-BOLD_MAGENTA='\e[1;35m'
-CYAN='\e[0;36m'
-BOLD_CYAN='\e[1;36m'
-WHITE='\e[0;37m'
-BOLD_WHITE='\e[1;37m'
-RESET_COLOR='\e[0m'
+BLACK="\e[0;30m"
+BOLD_BLACK="\e[1;30m"
+RED="\e[0;31m"
+BOLD_RED="\e[1;31m"
+GREEN="\e[0;32m"
+BOLD_GREEN="\e[1;32m"
+YELLOW="\e[0;33m"
+BOLD_YELLOW="\e[1;33m"
+BLUE="\e[0;34m"
+BOLD_BLUE="\e[1;34m"
+MAGENTA="\e[0;35m"
+BOLD_MAGENTA="\e[1;35m"
+CYAN="\e[0;36m"
+BOLD_CYAN="\e[1;36m"
+WHITE="\e[0;37m"
+BOLD_WHITE="\e[1;37m"
+RESET_COLOR="\e[0m"
 
 # Function to display the header
 display_header() {
@@ -124,9 +122,9 @@ display_header() {
 
 # Function to display system resources
 display_resources() {
-    echo -e " INSTALLER OS -> ${RED} $(cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2) ${RESET_COLOR}"
+    echo -e " INSTALLER OS -> ${RED} $(cat /etc/os-release | grep "PRETTY_NAME" | cut -d"\"" -f2) ${RESET_COLOR}"
     echo -e ""
-    echo -e " CPU -> ${YELLOW} $(lscpu | grep 'Model name' | cut -d':' -f2- | sed 's/^ *//;s/  \+/ /g') ${RESET_COLOR}"
+    echo -e " CPU -> ${YELLOW} $(lscpu | grep "Model name" | cut -d":" -f2- | sed "s/^ *//;s/  \+/ /g") ${RESET_COLOR}"
     echo -e " RAM -> ${BOLD_GREEN}${SERVER_MEMORY}MB${RESET_COLOR}"
     echo -e " PRIMARY PORT -> ${BOLD_GREEN}${SERVER_PORT}${RESET_COLOR}"
     echo -e " EXTRA PORTS -> ${BOLD_GREEN}${P_SERVER_ALLOCATION_LIMIT}${RESET_COLOR}"
@@ -156,15 +154,4 @@ clear
 display_header
 display_resources
 display_footer
-EOF
-
-# Make the startup script executable
-chmod +x ${ROOTFS_DIR}/root/startup.sh
-
-# Start PRoot environment and run startup script
-$ROOTFS_DIR/usr/local/bin/proot \
---rootfs="${ROOTFS_DIR}" \
--0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit /root/startup.sh
-$ROOTFS_DIR/usr/local/bin/proot \
---rootfs="${ROOTFS_DIR}" \
--0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit
+'
