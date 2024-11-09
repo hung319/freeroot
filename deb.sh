@@ -90,54 +90,6 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
     touch $ROOTFS_DIR/.installed
 fi
 
-# Define color variables
-BLACK='\e[0;30m'
-BOLD_BLACK='\e[1;30m'
-RED='\e[0;31m'
-BOLD_RED='\e[1;31m'
-GREEN='\e[0;32m'
-BOLD_GREEN='\e[1;32m'
-YELLOW='\e[0;33m'
-BOLD_YELLOW='\e[1;33m'
-BLUE='\e[0;34m'
-BOLD_BLUE='\e[1;34m'
-MAGENTA='\e[0;35m'
-BOLD_MAGENTA='\e[1;35m'
-CYAN='\e[0;36m'
-BOLD_CYAN='\e[1;36m'
-WHITE='\e[0;37m'
-BOLD_WHITE='\e[1;37m'
-
-# Reset text color
-RESET_COLOR='\e[0m'
-
-# Function to display the header
-display_header() {
-    echo -e "${BOLD_MAGENTA}            LegendYt4k"
-    echo -e "${BOLD_MAGENTA}               Sub"
-    echo -e "${BOLD_MAGENTA}___________________________________________________"
-    echo -e "           ${YELLOW}-----> System Resources <----${RESET_COLOR}"
-    echo -e ""
-}
-
-# Function to display system resources
-display_resources() {
-    echo -e " INSTALLER OS -> ${RED} $(cat /etc/os-release | grep "PRETTY_NAME" | cut -d'"' -f2) ${RESET_COLOR}"
-    echo -e ""
-    echo -e " CPU -> ${YELLOW} $(lscpu | grep 'Model name' | cut -d':' -f2- | sed 's/^ *//;s/  \+/ /g') ${RESET_COLOR}"
-    echo -e " RAM -> ${BOLD_GREEN}${SERVER_MEMORY}MB${RESET_COLOR}"
-    echo -e " PRIMARY PORT -> ${BOLD_GREEN}${SERVER_PORT}${RESET_COLOR}"
-    echo -e " EXTRA PORTS -> ${BOLD_GREEN}${P_SERVER_ALLOCATION_LIMIT}${RESET_COLOR}"
-    echo -e " SERVER UUID -> ${BOLD_GREEN}${P_SERVER_UUID}${RESET_COLOR}"
-    echo -e " LOCATION -> ${BOLD_GREEN}${P_SERVER_LOCATION}${RESET_COLOR}"
-}
-
-display_footer() {
-    echo -e "${BOLD_MAGENTA}___________________________________________________${RESET_COLOR}"
-    echo -e ""
-    echo -e "           ${YELLOW}-----> VPS HAS STARTED <----${RESET_COLOR}"
-}
-
 # Create setup script with display functions and package installation
 cat > ${ROOTFS_DIR}/root/setup.sh << 'EOF'
 #!/bin/sh
