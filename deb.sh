@@ -159,4 +159,4 @@ chmod +x ${ROOTFS_DIR}/root/setup.sh
 # Start PRoot environment and run setup script
 $ROOTFS_DIR/usr/local/bin/proot \
 --rootfs="${ROOTFS_DIR}" \
--0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit /root/setup.sh
+-0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf /root/setup.sh --kill-on-exit
