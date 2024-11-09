@@ -90,13 +90,9 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
     touch $ROOTFS_DIR/.installed
 fi
 
-# Create setup script with display functions and package installation
-cat > ${ROOTFS_DIR}/root/setup.sh << 'EOF'
+# Create startup script that will run on every boot
+cat > ${ROOTFS_DIR}/root/startup.sh << 'EOF'
 #!/bin/sh
-
-# First run the package installation commands
-apt update
-apt install -y software-properties-common sudo
 
 # Define color variables
 BLACK='\e[0;30m'
@@ -144,19 +140,31 @@ display_footer() {
     echo -e "           ${YELLOW}-----> VPS HAS STARTED <----${RESET_COLOR}"
 }
 
+apt update
+# Check if first run
+if [ ! -e "/root/.firstrun" ]; then
+    # First run - install packages
+    apt install -y software-properties-common sudo
+    # Create firstrun flag
+    touch /root/.firstrun
+fi
+
 # Clear screen before displaying information
 clear
 
-# Display the information after package installation
+# Display the information
 display_header
 display_resources
 display_footer
+
+# Keep the shell running
+/bin/bash
 EOF
 
-# Make the setup script executable
-chmod +x ${ROOTFS_DIR}/root/setup.sh
+# Make the startup script executable
+chmod +x ${ROOTFS_DIR}/root/startup.sh
 
-# Start PRoot environment and run setup script
+# Start PRoot environment and run startup script
 $ROOTFS_DIR/usr/local/bin/proot \
 --rootfs="${ROOTFS_DIR}" \
--0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf /root/setup.sh --kill-on-exit
+-0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit /root/startup.sh
