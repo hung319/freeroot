@@ -156,9 +156,6 @@ clear
 display_header
 display_resources
 display_footer
-
-# Keep the shell running
-/bin/bash
 EOF
 
 # Make the startup script executable
@@ -168,3 +165,6 @@ chmod +x ${ROOTFS_DIR}/root/startup.sh
 $ROOTFS_DIR/usr/local/bin/proot \
 --rootfs="${ROOTFS_DIR}" \
 -0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit /root/startup.sh
+$ROOTFS_DIR/usr/local/bin/proot \
+--rootfs="${ROOTFS_DIR}" \
+-0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit
