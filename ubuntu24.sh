@@ -66,6 +66,19 @@ display_gg() {
   echo -e "           ${CYAN}-----> Mission Completed ! <----${RESET_COLOR}"
 }
 
+$ROOTFS_DIR/usr/local/bin/proot \
+  --rootfs="${ROOTFS_DIR}" \
+  -0 -w "/root" -b /dev -b /sys -b /proc -b /etc/resolv.conf --kill-on-exit /bin/sh -c '
+apt update
+# Check if first run
+if [ ! -e "/root/.firstrun" ]; then
+    # First run - install packages
+    apt install -y software-properties-common sudo
+    # Create firstrun flag
+    touch /root/.firstrun
+fi
+'
+# Main script execution
 clear
 display_gg
 
