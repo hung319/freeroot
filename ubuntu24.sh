@@ -73,7 +73,7 @@ apt update
 # Check if first run
 if [ ! -e "/root/.firstrun" ]; then
     # First run - install packages
-    apt install -y software-properties-common sudo
+    apt install -y sudo
     # Create firstrun flag
     touch /root/.firstrun
 fi
