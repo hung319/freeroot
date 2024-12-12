@@ -41,7 +41,7 @@ echo ""
 echo "Installing Debian Stable..."
 
 curl -Lo /tmp/rootfs.tar.gz \
-"https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/stable/slim/oci/blobs/rootfs.tar.gz"
+"https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/bullseye/slim/oci/blobs/rootfs.tar.gz"
 tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
 fi
 
