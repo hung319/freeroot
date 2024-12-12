@@ -41,7 +41,7 @@ echo ""
 echo "Installing Debian Stable..."
 
 curl -Lo /tmp/rootfs.tar.xz \
-"https://github.com/debuerreotype/docker-debian-artifacts/raw/${ARCH_ALT}/stable/slim/rootfs.tar.xz"
+"https://github.com/debuerreotype/docker-debian-artifacts/raw/${ARCH_ALT}/bullseye/slim/rootfs.tar.xz"
 apt download xz-utils
 deb_file=$(find $ROOTFS_DIR -name "*.deb" -type f)
 dpkg -x $deb_file ~/.local/
