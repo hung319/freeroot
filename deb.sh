@@ -11,7 +11,7 @@ ROOTFS_DIR=$(pwd)
 export PATH=$PATH:~/.local/usr/bin
 
 max_retries=50
-timeout=1
+timeout=5
 
 # Detect the machine architecture.
 ARCH=$(uname -m)
