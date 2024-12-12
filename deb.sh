@@ -151,7 +151,6 @@ if [ ! -e "/root/.firstrun" ]; then
 fi
 '
 # Main script execution
-clear
 
 display_header
 display_resources
