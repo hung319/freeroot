@@ -19,9 +19,9 @@ ARCH=$(uname -m)
 # Check machine architecture to make sure it is supported.
 # If not, we exit with a non-zero status code.
 if [ "$ARCH" = "x86_64" ]; then
-  ARCH_ALT=686d9f6eaada08a754bc7abf6f6184c65c5b378f
+  ARCH_ALT=amd64
 elif [ "$ARCH" = "aarch64" ]; then
-  ARCH_ALT=2f108af35e22064c848b8628a7cac56192246dba
+  ARCH_ALT=arm64v8
 else
   printf "Unsupported CPU architecture: ${ARCH}"
   exit 1
@@ -40,14 +40,9 @@ echo "##########################################################################
 echo ""
 echo "Installing Debian Stable..."
 
-curl -Lo /tmp/rootfs.tar.xz \
-"https://github.com/debuerreotype/docker-debian-artifacts/raw/${ARCH_ALT}/bullseye/slim/rootfs.tar.xz"
-apt download xz-utils
-deb_file=$(find $ROOTFS_DIR -name "*.deb" -type f)
-dpkg -x $deb_file ~/.local/
-rm "$deb_file"
-
-tar -xJf /tmp/rootfs.tar.xz -C $ROOTFS_DIR
+curl -Lo /tmp/rootfs.tar.gz \
+"https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/bullseye/slim/oci/blobs/rootfs.tar.gz"
+tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
 fi
 
 ################################
