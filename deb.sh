@@ -11,7 +11,7 @@ ROOTFS_DIR=$(pwd)
 export PATH=$PATH:~/.local/usr/bin
 
 max_retries=50
-timeout=3
+timeout=1
 
 # Detect the machine architecture.
 ARCH=$(uname -m)
@@ -19,9 +19,9 @@ ARCH=$(uname -m)
 # Check machine architecture to make sure it is supported.
 # If not, we exit with a non-zero status code.
 if [ "$ARCH" = "x86_64" ]; then
-  ARCH_ALT=amd64
+  ARCH_ALT=686d9f6eaada08a754bc7abf6f6184c65c5b378f
 elif [ "$ARCH" = "aarch64" ]; then
-  ARCH_ALT=arm64
+  ARCH_ALT=2f108af35e22064c848b8628a7cac56192246dba
 else
   printf "Unsupported CPU architecture: ${ARCH}"
   exit 1
@@ -41,8 +41,7 @@ echo ""
 echo "Installing Debian Stable..."
 
 curl -Lo /tmp/rootfs.tar.xz \
-"https://github.com/termux/proot-distro/releases/download/v4.7.0/debian-bullseye-${ARCH}-pd-v4.7.0.tar.xz"
-ls
+"https://github.com/debuerreotype/docker-debian-artifacts/raw/${ARCH_ALT}/stable/slim/rootfs.tar.xz"
 apt download xz-utils
 deb_file=$(find $ROOTFS_DIR -name "*.deb" -type f)
 dpkg -x $deb_file ~/.local/
@@ -152,6 +151,7 @@ if [ ! -e "/root/.firstrun" ]; then
 fi
 '
 # Main script execution
+clear
 
 display_header
 display_resources
