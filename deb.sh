@@ -41,7 +41,7 @@ echo ""
 echo "Installing Debian Stable..."
 
 curl -Lo /tmp/rootfs.tar.xz \
-"https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/stable/slim/rootfs.tar.xz"
+"https://github.com/termux/proot-distro/releases/download/v4.7.0/debian-bookworm-${ARCH}-pd-v4.7.0.tar.xz"
 apt download xz-utils
 deb_file=$(find $ROOTFS_DIR -name "*.deb" -type f)
 dpkg -x $deb_file ~/.local/
