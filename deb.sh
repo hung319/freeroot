@@ -7,6 +7,7 @@
 # Define the root directory to /home/runner.
 # We can only write in /home/runner and /tmp in the runner/RDP.
 ROOTFS_DIR=$(pwd)
+DEBIAN_VER=stable
 
 export PATH=$PATH:~/.local/usr/bin
 
@@ -44,7 +45,7 @@ echo "Installing Debian Stable..."
 
 mkdir -p tmp
 curl -Lo ./tmp/rootfs.tar.gz \
-"https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/stable/slim/oci/blobs/rootfs.tar.gz"
+"https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/${DEBIAN_VER}/slim/oci/blobs/rootfs.tar.gz"
 tar -xf ./tmp/rootfs.tar.gz -C $ROOTFS_DIR
 fi
 
