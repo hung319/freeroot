@@ -22,6 +22,8 @@ if [ "$ARCH" = "x86_64" ]; then
   ARCH_ALT=amd64
 elif [ "$ARCH" = "aarch64" ]; then
   ARCH_ALT=arm64v8
+elif [ "$ARCH" = "armv7l" ]; then
+  ARCH_ALT=arm32v7
 else
   printf "Unsupported CPU architecture: ${ARCH}"
   exit 1
@@ -40,9 +42,10 @@ echo "##########################################################################
 echo ""
 echo "Installing Debian Stable..."
 
-curl -Lo /tmp/rootfs.tar.gz \
-"https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/bullseye/slim/oci/blobs/rootfs.tar.gz"
-tar -xf /tmp/rootfs.tar.gz -C $ROOTFS_DIR
+mkdir -p tmp
+curl -Lo ./tmp/rootfs.tar.gz \
+"https://github.com/debuerreotype/docker-debian-artifacts/raw/refs/heads/dist-${ARCH_ALT}/stable/slim/oci/blobs/rootfs.tar.gz"
+tar -xf ./tmp/rootfs.tar.gz -C $ROOTFS_DIR
 fi
 
 ################################
@@ -80,7 +83,7 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
     # Add DNS Resolver nameservers to resolv.conf.
     printf "nameserver 1.1.1.1\nnameserver 1.0.0.1" > ${ROOTFS_DIR}/etc/resolv.conf
     # Wipe the files we downloaded into /tmp previously.
-    rm -rf /tmp/rootfs.tar.xz /tmp/sbin
+    rm -rf ./tmp/rootfs.tar.xz ./tmp/sbin
     # Create .installed to later check whether Alpine is installed.
     touch $ROOTFS_DIR/.installed
 fi
