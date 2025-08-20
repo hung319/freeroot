@@ -27,7 +27,7 @@ else
     curl -Lo ./tmp/rootfs.tar.xz "$IMAGE_URL"
 
     mkdir -p "$ROOTFS_DIR"
-    tar -xvJf ./tmp/rootfs.tar.xz -C "$ROOTFS_DIR"
+    tar -xvf ./tmp/rootfs.tar.xz -C "$ROOTFS_DIR"
 
     mkdir -p $ROOTFS_DIR/usr/local/bin
     echo "[*] Đang tải proot..."
@@ -65,4 +65,4 @@ EOF
     --bind=/dev \
     --bind=/sys \
     --bind=/tmp \
-    /bin/bash
+    /bin/sh
