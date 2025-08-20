@@ -23,12 +23,13 @@ mkdir -p tmp
 if [ -e "$ROOTFS_DIR/.installed" ]; then
     echo "OS đã được cài rồi, skip bước cài đặt"
 else
-    echo "[*] Đang tải OS rootfs..."
+    echo "[*] Đang tải rootfs..."
     curl -Lo ./tmp/rootfs.tar.xz "$IMAGE_URL"
 
     mkdir -p "$ROOTFS_DIR"
     tar -xvJf ./tmp/rootfs.tar.xz -C "$ROOTFS_DIR"
 
+    mkdir -p $ROOTFS_DIR/usr/local/bin
     echo "[*] Đang tải proot..."
     curl -Lo "$ROOTFS_DIR/usr/local/bin/proot" \
         "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
@@ -51,7 +52,7 @@ clear && cat << "EOF"
 ██║  ██║██╔══╝  ██╔══██╗██║╚════██║██╔══██║██║╚██╗██║
 ██████╔╝███████╗██║  ██║██║███████║██║  ██║██║ ╚████║
 ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-Welcome to Alpine ${OS_VERSION} rootfs!
+Welcome to Alpine rootfs!
 EOF
 
 "$ROOTFS_DIR/usr/local/bin/proot" \
