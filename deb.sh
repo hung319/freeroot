@@ -8,6 +8,7 @@
 # We can only write in /home/runner and /tmp in the runner/RDP.
 ROOTFS_DIR=$(pwd)
 DEBIAN_VER=stable
+PROOT_VERSION="5.3.0"
 
 export PATH=$PATH:~/.local/usr/bin
 
@@ -59,12 +60,12 @@ if [ ! -e $ROOTFS_DIR/.installed ]; then
     mkdir $ROOTFS_DIR/usr/local/bin -p
 
     curl -Lo $ROOTFS_DIR/usr/local/bin/proot \
-    "https://raw.githubusercontent.com/dxomg/vpsfreepterovm/main/proot-${ARCH}"
+    "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
 
   while [ ! -s "$ROOTFS_DIR/usr/local/bin/proot" ]; do
       rm $ROOTFS_DIR/usr/local/bin/proot -rf
       curl -Lo $ROOTFS_DIR/usr/local/bin/proot \
-      "https://raw.githubusercontent.com/dxomg/vpsfreepterovm/main/proot-${ARCH}"
+      "https://github.com/proot-me/proot/releases/download/v${PROOT_VERSION}/proot-v${PROOT_VERSION}-${ARCH}-static"
 
       if [ -s "$ROOTFS_DIR/usr/local/bin/proot" ]; then
           # Make PRoot executable.
