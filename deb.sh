@@ -7,7 +7,7 @@
 # Define the root directory to /home/runner.
 # We can only write in /home/runner and /tmp in the runner/RDP.
 ROOTFS_DIR=$(pwd)
-DEBIAN_VER=stable
+DEBIAN_VER="stable"
 PROOT_VERSION="5.3.0"
 
 export PATH=$PATH:~/.local/usr/bin
